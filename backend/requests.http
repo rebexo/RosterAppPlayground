@@ -1,0 +1,124 @@
+### neuen User registrieren
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "Selma",
+  "password": "Password123!",
+  "confirmPassword": "Password123!"
+}
+
+### einloggen
+# @name loginRequest
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "Rebecca",
+  "password": "Password123!"
+}
+
+### Token speichern
+> {%
+    client.global.set("authToken", response.body.token);
+%}
+
+### neue Schicht erstellen (mit dem Token)
+POST http://localhost:8080/api/shifts
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Frühschicht_eins_zwischen_7_und_15_Uhr",
+  "startTime": "07:00:00",
+  "endTime": "15:00:00"
+}
+
+### alle Schichten abrufen (mit dem Token)
+GET http://localhost:8080/api/shifts
+Authorization: Bearer {{authToken}}
+
+
+### neues Template mit Schichten erstellen
+POST http://localhost:8080/api/templates
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Reeperbahnfestival",
+  "description": "Basisbelegung für Winter-Wochen",
+  "shifts": [
+    {
+      "weekday": 0,
+      "positionName": "Küche",
+      "shiftId": "c70c62c5-4dc8-4325-b3a1-771e771dc1a1"
+    },
+    {
+      "weekday": 1,
+      "positionName": "Kaffee",
+      "shiftId": "c70c62c5-4dc8-4325-b3a1-771e771dc1a1"
+    },
+    {
+      "weekday": 2,
+      "positionName": "",
+      "shiftId": "c70c62c5-4dc8-4325-b3a1-771e771dc1a1"
+    }
+  ]
+}
+
+### alle Templates abrufen
+GET http://localhost:8080/api/templates
+Authorization: Bearer {{authToken}}
+
+### neues Dienstplanschema aus einem Template erstellen
+POST http://localhost:8080/api/schemas
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "name": "Dienstplan November 2025",
+  "startDate": "2025-11-01",
+  "endDate": "2025-11-30",
+  "templateAssignments": [
+    {
+      "templateId": "26dad9eb-a2e7-4caa-951f-029d1df9b2f4",
+      "validFrom": "2025-11-01",
+      "validTo": "2025-11-30"
+    }
+  ]
+}
+
+### alle Schemata abrufen
+GET http://localhost:8080/api/schemas
+Authorization: Bearer {{authToken}}
+
+#> {%
+#    client.global.set("availabilityLink", response.body.availabilityLinkID);
+#%}
+
+
+### öffentliche Daten abrufen
+GET http://localhost:8080/api/public/schemas/1898f0a0da4d4abea4a26fb73768e071
+
+### Verfügbarkeiten einreichen
+POST http://localhost:8080/api/public/schemas/1898f0a0da4d4abea4a26fb73768e071
+Content-Type: application/json
+
+{
+  "staffName": "Tove Jansen",
+  "comment": "Kann am 15.08. nur bis 14 Uhr.",
+  "targetShiftCount": 8,
+  "details": [
+    {
+      "date": "2025-11-08",
+      "status": "UNAVAILABLE"
+    }
+  ]
+}
+
+### ScheduleProposal generieren
+# @name generatePlan
+POST http://localhost:8080/api/schemas/54e62d79-5a4d-41da-b8f2-9fa070c6828b/generate_proposal
+Authorization: Bearer {{authToken}}
+
+### generierten Plan abrufen

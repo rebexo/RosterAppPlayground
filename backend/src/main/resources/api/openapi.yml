@@ -1,0 +1,821 @@
+openapi: 3.0.3
+info:
+  title: Dienstplan API
+  description: API zur Erstellung und Verwaltung von Dienstplänen.
+  version: '0.1'
+servers:
+  - url: /api/v1
+    description: Development server
+
+tags:
+  - name: Authentifizierung
+    description: Endpunkte für Registrierung und Login von Planern.
+  - name: Dienstplan-Templates (WeeklyTemplate)
+    description: Verwaltung von wiederverwendbaren Dienstplan-Vorlagen.
+  - name: Dienstplan-Schemata (ScheduleSchema)
+    description: Erstellung und Verwaltung von konkreten Dienstplan-Zeiträumen.
+  - name: Verfügbarkeiten (Availability)
+    description: Endpunkte zur Abfrage und Verwaltung von Mitarbeiter-Verfügbarkeiten.
+  - name: Dienstplan-Vorschläge (ScheduleProposal)
+    description: Generierung und Export von Dienstplan-Vorschlägen.
+  - name: Öffentliche Endpunkte
+    description: Endpunkte für Mitarbeiter zur Einreichung ihrer Verfügbarkeiten.
+  - name: Schichten (Shifts)
+    description: Verwaltung der grundlegenden Schicht-Definitionen.
+
+paths:
+  # -------------------- AUTHENTIFIZIERUNG --------------------
+  /auth/register:
+    post:
+      tags:
+        - Authentifizierung
+      summary: Einen neuen Planner-Account anlegen (US-01)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlannerRegistration'
+      responses:
+        '201':
+          description: Account erfolgreich erstellt. Gibt ein Auth-Token zurück.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '400':
+          description: Ungültige Eingabe (z.B. Passwörter stimmen nicht überein).
+        '409':
+          description: Benutzername bereits vergeben.
+
+  /auth/login:
+    post:
+      tags:
+        - Authentifizierung
+      summary: Einen Planner-Account anmelden (US-02)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlannerLogin'
+      responses:
+        '200':
+          description: Erfolgreich angemeldet. Gibt ein Auth-Token zurück.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: Anmeldedaten sind ungültig.
+
+  # -------------------- TEMPLATES --------------------
+  /templates:
+    post:
+      tags:
+        - Dienstplan-Templates (WeeklyTemplate)
+      summary: Ein neues Dienstplan-Template erstellen (US-03)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTemplate'
+      responses:
+        '201':
+          description: Template erfolgreich erstellt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Ungültige Eingabe.
+        '409':
+          description: Ein Template mit diesem Namen existiert bereits.
+
+    get:
+      tags:
+        - Dienstplan-Templates (WeeklyTemplate)
+      summary: Alle Templates des angemeldeten Planers abrufen
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Eine Liste aller Templates.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Template'
+
+  /templates/{templateId}:
+    get:
+      tags:
+        - Dienstplan-Templates (WeeklyTemplate)
+      summary: Ein spezifisches Template abrufen
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Die Details des Templates.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '404':
+          description: Template nicht gefunden.
+
+    put:
+      tags:
+        - Dienstplan-Templates (WeeklyTemplate)
+      summary: Ein bestehendes Template bearbeiten (US-14)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Das vollständige, aktualisierte Template-Objekt.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTemplate'
+      responses:
+        '200':
+          description: Template erfolgreich aktualisiert.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '400':
+          description: Ungültige Eingabedaten.
+        '404':
+          description: Template nicht gefunden.
+        '409':
+          description: Der Template-Name ist bereits an einen anderen Eintrag vergeben.
+
+    delete:
+      tags:
+        - Dienstplan-Templates (WeeklyTemplate)
+      summary: Ein bestehendes Template löschen (US-15)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Template erfolgreich gelöscht.
+        '404':
+          description: Template nicht gefunden.
+        '409':
+          description: >
+            Das Template kann nicht gelöscht werden, da es in mindestens
+            einem Dienstplanschema verwendet wird.
+  
+
+  # -------------------- Schichten -------------------
+  /shifts:
+    post:
+      tags:
+        - Schichten (Shifts)
+      summary: Eine neue Schicht anlegen (US-16)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewShift'
+      responses:
+        '201':
+          description: Schicht erfolgreich erstellt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+        '409':
+          description: Eine Schicht mit diesem Namen existiert bereits.
+
+    get:
+      tags:
+        - Schichten (Shifts)
+      summary: Alle verfügbaren Schichten abrufen
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Eine Liste aller Schichten.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shift'
+
+
+  /shifts/{shiftId}:
+    put:
+      tags:
+        - Schichten (Shifts)
+      summary: Eine bestehende Schicht aktualisieren
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shiftId
+          in: path
+          required: true
+          description: Die ID der zu aktualisierenden Schicht.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Das vollständige, aktualisierte Schicht-Objekt.
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewShift'
+      responses:
+        '200':
+          description: Schicht erfolgreich aktualisiert.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+        '400':
+          description: Ungültige Eingabedaten (z.B. Endzeit liegt vor Startzeit).
+        '404':
+          description: Schicht nicht gefunden.
+        '409':
+          description: Der Schicht-Name ist bereits an einen anderen Eintrag vergeben.
+
+    delete:
+      tags:
+        - Schichten (Shifts)
+      summary: Eine bestehende Schicht löschen (US-17)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shiftId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Schicht erfolgreich gelöscht.
+        '404':
+          description: Schicht nicht gefunden.
+        '409':
+          description: >
+            Die Schicht kann nicht gelöscht werden, da sie in mindestens
+            einem Template verwendet wird.
+  
+
+  # -------------------- SCHEMATA --------------------
+  /schemas:
+    post:
+      tags:
+        - Dienstplan-Schemata (ScheduleSchema)
+      summary: Ein neues Dienstplanschema erstellen (US-04)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSchema'
+      responses:
+        '201':
+          description: Schema erfolgreich erstellt.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schema'
+        '400':
+          description: Ungültige Eingabe (z.B. überlappende Template-Zeiträume).
+
+    get:
+      tags:
+        - Dienstplan-Schemata (ScheduleSchema)
+      summary: Alle Schemata des angemeldeten Planers abrufen
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Eine Liste aller Schemata.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schema'
+
+  /schemas/{schemaId}:
+    get:
+      tags:
+        - Dienstplan-Schemata (ScheduleSchema)
+      summary: Ein spezifisches Schema abrufen, inklusive Link (US-05)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schemaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Die Details des Schemas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schema'
+        '404':
+          description: Schema nicht gefunden.
+
+  /schemas/{schemaId}/expected-entries:
+    patch:
+      tags:
+        - Dienstplan-Schemata (ScheduleSchema)
+      summary: Aktualisiert die Anzahl der erwarteten Antworten für ein Schema
+      description: >
+        Setzt oder ändert die Zahl der erwarteten Einträge für einen
+        spezifischen Dienstplan.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schemaId
+          in: path
+          required: true
+          description: Die ID des zu aktualisierenden Schemas.
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Die neue Anzahl der erwarteten Antworten.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              format: int32
+              example: 25
+      responses:
+        '200':
+          description: Erfolgreich aktualisiert. Gibt das vollständige, aktualisierte Schema-Objekt zurück.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schema'
+        '400':
+          description: Ungültige Eingabe (z.B. negative Zahl).
+        '401':
+          description: Nicht authentifiziert (Token fehlt oder ist ungültig).
+        '403':
+          description: Nicht autorisiert (der User darf dieses Schema nicht bearbeiten).
+        '404':
+          description: Schema mit der angegebenen ID nicht gefunden.
+
+
+  # -------------------- VERFÜGBARKEITEN --------------------
+  /schemas/{schemaId}/availability-entries:
+    get:
+      tags:
+        - Verfügbarkeiten (Availability)
+      summary: Alle eingetragenen Verfügbarkeiten für ein Schema abrufen (US-06)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schemaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Liste der Verfügbarkeitseinträge.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AvailabilityEntry'
+        '404':
+          description: Schema nicht gefunden.
+
+  /availability-entries/{entryId}:
+    patch:
+      tags:
+        - Verfügbarkeiten (Availability)
+      summary: Details eines Verfügbarkeitseintrags aktualisieren (z.B. Schichtanzahl) (US-07)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetShiftCount:
+                  type: integer
+                  description: Die zuzuordnende Anzahl von Schichten.
+      responses:
+        '200':
+          description: Eintrag erfolgreich aktualisiert.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityEntry'
+        '404':
+          description: Eintrag nicht gefunden.
+
+  # -------------------- VORSCHLÄGE --------------------
+  /schemas/{schemaId}/generate_proposals:
+    post:
+      tags:
+        - Dienstplan-Vorschläge (ScheduleProposal)
+      summary: Einen neuen Dienstplanvorschlag generieren (US-08)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: schemaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '202':
+          description: Generierung wurde gestartet.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proposal'
+        '404':
+          description: Schema nicht gefunden.
+        '409':
+          description: Zu wenige Verfügbarkeiten eingetragen, um einen Plan zu erstellen.
+
+  /proposals/{proposalId}/export:
+    get:
+      tags:
+        - Dienstplan-Vorschläge (ScheduleProposal)
+      summary: Einen Dienstplanvorschlag exportieren (US-09)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: proposalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xml, json]
+      responses:
+        '200':
+          description: Die exportierte Datei.
+          content:
+            application/xml:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+        '404':
+          description: Vorschlag nicht gefunden.
+
+  # -------------------- ÖFFENTLICHE ENDPUNKTE --------------------
+  /public/schemas/{availabilityLinkID}:
+    get:
+      tags:
+        - Öffentliche Endpunkte
+      summary: Öffentliche Informationen eines Schemas abrufen (für Mitarbeiter)
+      parameters:
+        - name: availabilityLinkID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Öffentliche Schema-Daten (z.B. Zeitraum, Name).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSchema'
+        '404':
+          description: Link ist ungültig oder abgelaufen.
+
+    post:
+      tags:
+        - Öffentliche Endpunkte
+      summary: Verfügbarkeit für ein Schema einreichen (US-10, US-11, US-12)
+      parameters:
+        - name: availabilityLinkID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAvailabilityEntry'
+      responses:
+        '201':
+          description: Verfügbarkeit erfolgreich gespeichert.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityEntry'
+        '403':
+          description: Einreichung für dieses Schema ist bereits geschlossen.
+        '404':
+          description: Link ist ungültig oder abgelaufen.
+
+  /public/availability-entries/{entryId}:
+    put:
+      tags:
+        - Öffentliche Endpunkte
+      summary: Eine bestehende Verfügbarkeit ändern (US-13)
+      description: Hierfür müsste bei der Ersteinreichung ein Token oder eine geheime URL zurückgegeben werden, um den Bearbeiter zu autorisieren.
+      parameters:
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAvailabilityEntry' # Gleiches Schema wie beim Erstellen
+      responses:
+        '200':
+          description: Änderungen erfolgreich gespeichert.
+        '403':
+          description: Einreichung für dieses Schema ist bereits geschlossen oder nicht autorisiert.
+        '404':
+          description: Eintrag nicht gefunden.
+
+# -------------------- COMPONENTS --------------------
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- Auth ---
+    PlannerRegistration:
+      type: object
+      required: [username, password, confirmPassword]
+      properties:
+        username:
+          type: string
+          example: max.mustermann
+        password:
+          type: string
+          format: password
+          example: StrongPassword123!
+        confirmPassword:
+          type: string
+          format: password
+          example: StrongPassword123!
+    PlannerLogin:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    # --- Template ---
+    NewTemplate:
+      type: object
+      required: [name, shifts]
+      properties:
+        name:
+          type: string
+          example: "Defaultplan-Sommer"
+        description:
+          type: string
+          example: "Standardbelegung für die Sommermonate"
+        shifts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TemplateShift'
+    Template:
+      allOf:
+        - $ref: '#/components/schemas/NewTemplate'
+        - type: object
+          properties:
+            templateID:
+              type: string
+              format: uuid
+    TemplateShift:
+      type: object
+      properties:
+        weekday:
+          type: integer
+          description: "0=Montag, 6=Sonntag"
+          example: 0
+        shiftID:
+          type: string
+          format: uuid
+        positionName:
+          type: string
+          example: "Kasse 1"
+
+    # --- Schema ---
+    NewSchema:
+      type: object
+      required: [name, startDate, endDate, templateAssignments]
+      properties:
+        name:
+          type: string
+          example: "Dienstplan August 2026"
+        startDate:
+          type: string
+          format: date
+          example: "2026-08-01"
+        endDate:
+          type: string
+          format: date
+          example: "2026-08-31"
+        expectedEntries:
+          type: integer
+          example: 15
+        templateAssignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaTemplateAssignment'
+    Schema:
+      allOf:
+        - $ref: '#/components/schemas/NewSchema'
+        - type: object
+          properties:
+            schemaID:
+              type: string
+              format: uuid
+            availabilityLinkID:
+              type: string
+              example: "kFz_9xY8bCjV7n"
+            collectionClosed:
+              type: boolean
+              default: false
+    SchemaTemplateAssignment:
+      type: object
+      properties:
+        templateID:
+          type: string
+          format: uuid
+        validFrom:
+          type: string
+          format: date
+        validTo:
+          type: string
+          format: date
+    PublicSchema:
+      type: object
+      properties:
+        name:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    # --- Availability ---
+    NewAvailabilityEntry:
+      type: object
+      required: [staffName, details]
+      properties:
+        staffName:
+          type: string
+          example: "Erika Mustermann"
+        comment:
+          type: string
+          example: "Kann am 15.08. nur bis 14 Uhr."
+        targetShiftCount:
+          type: integer
+          example: 8
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/AvailabilityDetail'
+    AvailabilityEntry:
+      allOf:
+        - $ref: '#/components/schemas/NewAvailabilityEntry'
+        - type: object
+          properties:
+            availabilityEntryId:
+              type: string
+              format: uuid
+            submittedAt:
+              type: string
+              format: date-time
+    AvailabilityDetail:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [unavailable, preferred]
+          example: "unavailable"
+
+    # --- Proposal ---
+    Proposal:
+      type: object
+      properties:
+        proposalID:
+          type: string
+          format: uuid
+        schemaID:
+          type: string
+          format: uuid
+        generatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [in_progress, completed, failed]
+    # --- Shift ---
+    NewShift:
+      type: object
+      required: [name, startTime, endTime]
+      properties:
+        name:
+          type: string
+          example: "Frühschicht"
+        startTime:
+          type: string
+          format: time
+          example: "06:00:00"
+        endTime:
+          type: string
+          format: time
+          example: "14:00:00"
+    Shift:
+      allOf:
+        - $ref: '#/components/schemas/NewShift'
+        - type: object
+          required: [shiftID]
+          properties:
+            shiftID:
+              type: string
+              format: uuid
