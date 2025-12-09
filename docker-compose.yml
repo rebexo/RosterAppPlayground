@@ -1,0 +1,49 @@
+services:
+  # 1. Datenbank (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: rosterdb
+      POSTGRES_USER: rosteruser
+      POSTGRES_PASSWORD: securepassword123  # Für Produktion: Ändern!
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Optional: Zum Debuggen von außen erreichbar
+
+  # 2. Backend (Spring Boot)
+  backend:
+    build: ./backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      # Überschreibt spring.datasource.url
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/rosterdb
+      # Überschreibt spring.datasource.username
+      SPRING_DATASOURCE_USERNAME: rosteruser
+      # Überschreibt spring.datasource.password
+      SPRING_DATASOURCE_PASSWORD: securepassword123
+      # Postgres Treiber erzwingen
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      # Hibernate auf Postgres-Modus schalten
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      # Tabellen automatisch erstellen/updaten (statt create-only)
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # H2 Konsole deaktivieren
+      SPRING_H2_CONSOLE_ENABLED: "false"
+      # JWT Secret (aus deiner application.properties übernommen, besser hier ändern!)
+      JWT_SECRET: ${JWT_SECRET:-ZWluc3VwZXJzaWNoZXJlcmNvZGVmdWVybWVpbmVmYW50YXNpc2NoZWFwcGVuZGxpY}
+
+  # 3. Frontend (Vue + Nginx)
+  frontend:
+    build: ./frontend
+    restart: always
+    ports:
+      - "80:80" # Die App ist dann unter Port 80 erreichbar
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data: # Sorgt dafür, dass DB-Daten persistent bleiben
