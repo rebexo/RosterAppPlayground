@@ -10,7 +10,7 @@ RUN npm ci
 # Kopiere den Rest und baue
 COPY . .
 # 'npm run build' führt laut deiner package.json auch den Type-Check durch
-RUN npm run build
+RUN npm run build-only
 
 # 2. Production Stage (Nginx)
 FROM nginx:stable-alpine
