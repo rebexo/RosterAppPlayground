@@ -20,11 +20,11 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@RequestBody RegisterRequest registerRequest) {
         try {
             authService.register(registerRequest.getUsername(), registerRequest.getPassword());
-            // Optional: Nach der Registrierung direkt einloggen und Token zurückgeben
-            //String token = authService.login(registerRequest.getUsername(), registerRequest.getPassword());
+            // login user and gen token
+            String token = authService.login(registerRequest.getUsername(), registerRequest.getPassword());
             //System.out.println("generated token " + token);
-            //return ResponseEntity.ok(new AuthToken(token));
-            return ResponseEntity.status(201).build();
+            return ResponseEntity.ok(new AuthToken(token));
+            //return ResponseEntity.status(201).build();
         } catch (IllegalStateException e) {
             return ResponseEntity.status(409).body(e.getMessage()); // 409 Conflict für "existiert bereits"
         }
