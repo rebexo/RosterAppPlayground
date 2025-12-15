@@ -33,9 +33,10 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials: LoginCredentials) {
       const response = await apiClient.post('/auth/login', credentials)
       const token = response.data.token
+
       this.token = token
       localStorage.setItem('authToken', token)
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      //axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
       // Token dekodieren und User-Informationen speichern
       const decodedToken: { sub: string } = jwtDecode(token);
