@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import type { Ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
+import apiClient from "@/http-common.ts";
 
 // Interfaces für die Datenstruktur
 export interface SchemaTemplateAssignment {
@@ -42,7 +43,7 @@ export const useSchemaStore = defineStore('schema', () => {
   async function fetchSchemas() {
     isLoading.value = true;
     try {
-      const response = await axios.get('http://localhost:8080/api/schemas');
+      const response = await apiClient.get('/schemas');
       schemas.value = response.data;
     } catch (error) {
       console.error('Fehler beim Laden der Schemata:', error);
@@ -54,7 +55,7 @@ export const useSchemaStore = defineStore('schema', () => {
   async function createSchema(schemaData: Schema) {
     isLoading.value = true;
     try {
-      await axios.post('http://localhost:8080/api/schemas', schemaData);
+      await apiClient.post('/schemas', schemaData);
       // Nach Erfolg zur Übersichtsseite navigieren
       router.push({ name: 'schema-list' });
     } catch (error) {
@@ -68,7 +69,7 @@ export const useSchemaStore = defineStore('schema', () => {
   async function fetchSchemaDetails(schemaId: string) {
     isLoading.value = true;
     try {
-      const response = await axios.get(`http://localhost:8080/api/schemas/${schemaId}/details`);
+      const response = await apiClient.get(`/schemas/${schemaId}/details`);
       currentSchemaDetails.value = response.data;
     } catch (error) { /* ... */ }
     finally { isLoading.value = false; }
@@ -76,7 +77,7 @@ export const useSchemaStore = defineStore('schema', () => {
 
   async function updateExpectedEntries(schemaId: string, count: number) {
     try {
-      const response = await axios.patch(`http://localhost:8080/api/schemas/${schemaId}/expected-entries`, count, {
+      const response = await apiClient.patch(`/schemas/${schemaId}/expected-entries`, count, {
         headers: { 'Content-Type': 'application/json' }
       });
       // Update den lokalen State für sofortiges Feedback

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Ref } from 'vue';
 import axios from 'axios';
+import apiClient from '@/http-common.ts'
 
 // Interfaces, die die DTOs spiegeln
 interface AssignedShift {

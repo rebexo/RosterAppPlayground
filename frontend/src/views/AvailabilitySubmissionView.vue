@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import type { Ref } from 'vue';
+import apiClient from '@/http-common.ts'
 
 interface PublicSchema {
   name: string;
@@ -42,7 +43,7 @@ const days = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await axios.get(`http://localhost:8080/api/public/schemas/${linkId}`);
+    const response = await apiClient.get(`/public/schemas/${linkId}`);
     schema.value = response.data;
   } catch (e: any) {
     error.value = e.response?.data || 'Der Link ist ungültig oder abgelaufen.';
@@ -75,7 +76,7 @@ async function handleSubmit() {
   };
 
   try {
-    const response = await axios.post(`http://localhost:8080/api/public/schemas/${linkId}`, submissionData);
+    const response = await apiClient.post(`/public/schemas/${linkId}`, submissionData);
     successMessage.value = response.data;
   } catch (e: any) {
     error.value = e.response?.data || 'Ein Fehler ist aufgetreten.';
