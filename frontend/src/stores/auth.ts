@@ -38,9 +38,9 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('authToken', token)
       //axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-      // Token dekodieren und User-Informationen speichern
+      // token dekodieren und userinfo speichern
       const decodedToken: { sub: string } = jwtDecode(token);
-      this.user = { username: decodedToken.sub }; // 'sub' ist der Standard-Claim für den Usernamen im JWT
+      this.user = { username: decodedToken.sub }; // 'sub' Standard-Claim für username im JWT
     },
 
     async register(credentials: RegisterCredentials) {

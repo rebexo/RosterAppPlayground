@@ -2,7 +2,7 @@ package org.roster.backend.adapter.in.web;
 
 import lombok.RequiredArgsConstructor;
 import org.roster.backend.adapter.in.web.dto.AvailabilityEntryDetailDto;
-import org.roster.backend.application.service.AvailabilityService; // Unser erweiterter Service
+import org.roster.backend.application.port.in.iAvailabilityService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AvailabilityEntryController {
 
-    private final AvailabilityService availabilityService;
+    private final iAvailabilityService availabilityService;
 
     // --- ENDPUNKT: Verfügbarkeitseinträge für ein Schema abrufen (Wireframe 2 Tabelle) ---
     // GET /api/schemas/{schemaId}/availability-entries

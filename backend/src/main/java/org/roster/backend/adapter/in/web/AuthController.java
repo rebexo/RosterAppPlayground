@@ -3,7 +3,7 @@ package org.roster.backend.adapter.in.web;
 import org.roster.backend.adapter.in.web.dto.AuthToken;
 import org.roster.backend.adapter.in.web.dto.LoginRequest;
 import org.roster.backend.adapter.in.web.dto.RegisterRequest;
-import org.roster.backend.application.service.AuthService;
+import org.roster.backend.application.port.in.iAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+    private final iAuthService authService;
 
     @PostMapping("/register")
     //@PostMapping(value = "/register", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -3,7 +3,7 @@ package org.roster.backend.adapter.in.web;
 import lombok.RequiredArgsConstructor;
 import org.roster.backend.adapter.in.web.dto.NewAvailabilityEntryDto;
 import org.roster.backend.adapter.in.web.dto.PublicSchemaDto;
-import org.roster.backend.application.service.AvailabilityService;
+import org.roster.backend.application.port.in.iAvailabilityService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class PublicController {
 
-    private final AvailabilityService availabilityService;
+    private final iAvailabilityService availabilityService;
 
     @GetMapping("/{linkId}")
     public ResponseEntity<?> getPublicSchemaData(@PathVariable String linkId) {

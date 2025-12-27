@@ -2,7 +2,7 @@ package org.roster.backend.adapter.in.web;
 
 import lombok.RequiredArgsConstructor;
 import org.roster.backend.adapter.in.web.dto.TemplateDto;
-import org.roster.backend.application.service.TemplateService;
+import org.roster.backend.application.port.in.iTemplateService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TemplateController {
 
-    private final TemplateService templateService;
+    private final iTemplateService templateService;
 
     @PostMapping
     public ResponseEntity<TemplateDto> createTemplate(@RequestBody TemplateDto templateDto) {

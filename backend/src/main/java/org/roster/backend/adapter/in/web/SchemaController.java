@@ -3,9 +3,9 @@ package org.roster.backend.adapter.in.web;
 import lombok.RequiredArgsConstructor;
 import org.roster.backend.adapter.in.web.dto.SchemaDto;
 import org.roster.backend.adapter.in.web.dto.CalculatedShiftDto;
+import org.roster.backend.application.port.in.iSchemaService;
+import org.roster.backend.application.port.in.iSolverService;
 import org.roster.backend.domain.ScheduleProposal;
-import org.roster.backend.application.service.SchemaService;
-import org.roster.backend.application.service.SolverService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,8 +18,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class SchemaController {
 
-    private final SchemaService schemaService;
-    private final SolverService solverService;
+    private final iSchemaService schemaService;
+    private final iSolverService solverService;
 
     @PostMapping
     public ResponseEntity<SchemaDto> createSchema(@RequestBody SchemaDto schemaDto) {

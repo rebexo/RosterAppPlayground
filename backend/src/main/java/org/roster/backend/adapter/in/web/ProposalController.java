@@ -2,7 +2,7 @@ package org.roster.backend.adapter.in.web;
 
 import lombok.RequiredArgsConstructor;
 import org.roster.backend.adapter.in.web.dto.ProposalDetailDto;
-import org.roster.backend.application.service.ProposalService;
+import org.roster.backend.application.port.in.iProposalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,7 +13,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProposalController {
 
-    private final ProposalService proposalService;
+    private final iProposalService proposalService;
 
     @GetMapping("/{proposalId}")
     public ResponseEntity<ProposalDetailDto> getProposal(@PathVariable UUID proposalId) {

@@ -2,7 +2,7 @@ package org.roster.backend.adapter.in.web;
 
 import lombok.RequiredArgsConstructor;
 import org.roster.backend.adapter.in.web.dto.ShiftDto;
-import org.roster.backend.application.service.ShiftService;
+import org.roster.backend.application.port.in.iShiftService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ShiftController {
 
-    private final ShiftService shiftService;
+    private final iShiftService shiftService;
 
     @PostMapping
     public ResponseEntity<ShiftDto> createShift(@RequestBody ShiftDto shiftDto) {
